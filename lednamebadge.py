@@ -267,6 +267,69 @@ class SimpleTextAndIcons:
         char_offsets[charmap[i]] = 11 * i
         # print(i, charmap[i], char_offsets[charmap[i]])
 
+    @staticmethod
+    def _pack_icon_ascii(ascii_art: str, ncols: int, ctrl: str):
+        """
+        Alternative icon input format:
+        - ASCII art stored in a Python multiline string
+        - " " (space) = OFF pixel
+        - "#"         = ON pixel
+
+        Packing rules (matches bitmap_img()):
+        - height is fixed at 11 rows
+        - width is ncols * 8 pixels
+        - data is packed column-major:
+            for col in range(ncols):
+                for row in range(11):
+                    emit one byte with 8 horizontal pixels (MSB is leftmost)
+
+        The ASCII art can be indented in the source for readability.
+        Common indentation and surrounding blank lines are stripped automatically.
+        """
+        import textwrap
+
+        if not isinstance(ctrl, str) or len(ctrl) != 1:
+            raise ValueError("ctrl must be a single character, e.g. '\\x12'")
+        if ncols <= 0:
+            raise ValueError(f"ncols must be > 0 (got {ncols})")
+
+        raw = textwrap.dedent(ascii_art)
+        lines = raw.splitlines()
+
+        # Drop leading/trailing completely empty lines (common with triple quotes)
+        while lines and lines[0].strip() == "":
+            lines.pop(0)
+        while lines and lines[-1].strip() == "":
+            lines.pop()
+
+        if len(lines) != 11:
+            raise ValueError(f"ASCII icon must have exactly 11 rows (got {len(lines)})")
+
+        width = ncols * 8
+
+        # Auto-pad/truncate each row to the required width so trailing spaces
+        # don't have to be preserved in the source (formatters/editors may strip them).
+        #
+        # - If a row is shorter: pad with OFF pixels (spaces).
+        # - If a row is longer: truncate (extra pixels would be invisible anyway).
+        #
+        # NOTE: We validate only that we have at least one non-empty row and
+        # exactly 11 rows. Width is controlled by `ncols`.
+        lines = [(line + (" " * width))[:width] for line in lines]
+
+        bytes_out = []
+        for col in range(ncols):
+            for row in range(11):
+                byte_val = 0
+                line = lines[row]
+                for bit in range(8):
+                    x = col * 8 + bit
+                    if line[x] == "#":
+                        byte_val |= 1 << (7 - bit)
+                bytes_out.append(byte_val)
+
+        return (array("B", bytes_out), ncols, ctrl)
+
     bitmap_named = {
         'ball':      (array('B', (
             0b00000000,
@@ -313,6 +376,23 @@ class SimpleTextAndIcons:
         'owncloud':  (array('B', (0x00, 0x01, 0x02, 0x03, 0x06, 0x0c, 0x1a, 0x13, 0x11, 0x19, 0x0f,
                                   0x78, 0xcc, 0x87, 0xfc, 0x42, 0x81, 0x81, 0x81, 0x81, 0x43, 0xbd,
                                   0x00, 0x00, 0x00, 0x80, 0x80, 0xe0, 0x30, 0x10, 0x28, 0x28, 0xd0)), 3, '\x14'),
+        "git": _pack_icon_ascii(
+            """
+                 ##
+                  ##
+               ##  ##
+              ###   ##
+             #### #  ##
+            ##### ##  ##
+             #### ## ##
+              ##   ###
+               ######
+                ####
+                 ##
+            """,
+            ncols=2,
+            ctrl="\x12",
+        ),
     }
 
     bitmap_builtin = {}
