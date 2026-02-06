@@ -324,7 +324,7 @@ class SimpleTextAndIcons:
                 line = lines[row]
                 for bit in range(8):
                     x = col * 8 + bit
-                    if line[x] == "#":
+                    if line[x] == "/":
                         byte_val |= 1 << (7 - bit)
                 bytes_out.append(byte_val)
 
@@ -378,17 +378,17 @@ class SimpleTextAndIcons:
                                   0x00, 0x00, 0x00, 0x80, 0x80, 0xe0, 0x30, 0x10, 0x28, 0x28, 0xd0)), 3, '\x14'),
         "git": _pack_icon_ascii(
             """
-                 ##
-                  ##
-               ##  ##
-              ###   ##
-             #### #  ##
-            ##### ##  ##
-             #### ## ##
-              ##   ###
-               ######
-                ####
-                 ##
+                 //
+                  //
+               //  //
+              ///   //
+             //// /  //
+            ///// //  //
+             //// // //
+              //   ///
+               //////
+                ////
+                 //
             """,
             ncols=2,
             ctrl="\x12",
