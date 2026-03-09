@@ -24,6 +24,6 @@ pkgs.mkShell {
     fi
     source .venv/bin/activate
     # macos dependencies
-    uv pip install pyhidapi pyusb pillow
+    uv pip install pyhidapi pyusb pillow bleak
   '';
 }
